@@ -194,20 +194,9 @@ void setup() {
 
   analogWrite(SEG_PERIOD, 200);
 
-  Serial.println("Testing 7-segment display setup...");
-
+  Serial.println("Testing 7-segment display pin setup...");
   Serial.println("You should see the digits 0-9 appear on your display.");
-
-  for (int i = 0; i < 10; i++) {
-    setDisplay(i);
-    delay(CYCLE_DELAY);
-  }
-
-  for (int i = 9; i >= 0; i--) {
-    setDisplay(i);
-    delay(CYCLE_DELAY);
-  }
-
+  Serial.println("Feel free to comment out these lines if you'd like to run tests faster.");
   for (int i = 0; i < 10; i++) {
     setDisplay(i);
     delay(CYCLE_DELAY);
@@ -263,7 +252,6 @@ void loop() {
   for (int i = 0; i < 5; i++) {
     // NOTE - might have to change this line, depending on how your buttons are connected
     buttonStates[i] = !readButton(i + 1);
-    Serial.println(buttonStates[i]);
     if (buttonStates[i] == HIGH) {
       if (buttonPressed == -1)
         buttonPressed = i + 1;
@@ -275,8 +263,8 @@ void loop() {
 
   //
   if (displayingDigit == false && buttonPressed == -1) {
-    // Generate random number from 0-5
-    currentDigit = random(0, 6);
+    // Generate random number from 1-5
+    currentDigit = random(1, 6);
     setDisplay(currentDigit);
     oldT = millis();
     displayingDigit = true;
@@ -285,7 +273,10 @@ void loop() {
     setDisplay(CLEAR);
 
     deltaT = newT - oldT;
-    Serial.println(deltaT);
+    Serial.print(deltaT);
+    Serial.print(",");
+    Serial.print(currentDigit);
+    Serial.println();
 
     displayingDigit = false;
     randDelay = random(1000, 3000);
