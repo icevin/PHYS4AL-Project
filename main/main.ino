@@ -13,19 +13,23 @@
 #define BUTTON_4 12
 #define BUTTON_5 13
 
-int ledBrightness = 125;
-int ledState = LOW;
+#define CLEAR -1
 
-int buttonPin = 2;
-int buttonState = LOW;
+#define CYCLE_DELAY 150
 
-long randDelay;
-long newT;
-long oldT;
-long deltaT;
-
+// Sets display to 0-9, . if invalid, clear if -1 (CLEAR)
 void setDisplay(int digit) {
-  switch(digit) {
+  analogWrite(SEG_PERIOD, 0);
+  switch (digit) {
+    case CLEAR:
+      digitalWrite(SEG_A, LOW);
+      digitalWrite(SEG_B, LOW);
+      digitalWrite(SEG_C, LOW);
+      digitalWrite(SEG_D, LOW);
+      digitalWrite(SEG_E, LOW);
+      digitalWrite(SEG_F, LOW);
+      digitalWrite(SEG_G, LOW);
+      break;
     case 0:
       digitalWrite(SEG_A, HIGH);
       digitalWrite(SEG_B, HIGH);
@@ -118,11 +122,56 @@ void setDisplay(int digit) {
       break;
     default:
       Serial.println("Error: setDisplay was called with an invalid digit!");
+      analogWrite(SEG_PERIOD, 255);
       break;
   }
 }
 
+void setOnly(int value) {
+  setDisplay(CLEAR);
+  switch (value) {
+    case 0:
+      digitalWrite(SEG_A, HIGH);
+      break;
+    case 1:
+      digitalWrite(SEG_B, HIGH);
+      break;
+    case 2:
+      digitalWrite(SEG_C, HIGH);
+      break;
+    case 3:
+      digitalWrite(SEG_D, HIGH);
+      break;
+    case 4:
+      digitalWrite(SEG_E, HIGH);
+      break;
+    case 5:
+      digitalWrite(SEG_F, HIGH);
+      break;
+    case 6:
+      digitalWrite(SEG_G, HIGH);
+  }
+}
 
+int readButton(int button) {
+  switch (button) {
+    case 1:
+      return digitalRead(BUTTON_1);
+    case 2:
+      return digitalRead(BUTTON_2);
+    case 3:
+      return digitalRead(BUTTON_3);
+    case 4:
+      return digitalRead(BUTTON_4);
+    case 5:
+      return digitalRead(BUTTON_5);
+    default:
+      break;
+  }
+  return -1;
+}
+
+int randDelay = 0;
 // the setup routine runs once when you press reset:
 void setup() {
   pinMode(SEG_A, OUTPUT);
@@ -132,7 +181,7 @@ void setup() {
   pinMode(SEG_E, OUTPUT);
   pinMode(SEG_F, OUTPUT);
   pinMode(SEG_G, OUTPUT);
-  
+
   pinMode(SEG_PERIOD, OUTPUT);
 
   pinMode(BUTTON_1, INPUT_PULLUP);
@@ -140,58 +189,106 @@ void setup() {
   pinMode(BUTTON_3, INPUT_PULLUP);
   pinMode(BUTTON_4, INPUT_PULLUP);
   pinMode(BUTTON_5, INPUT_PULLUP);
-  
+
   Serial.begin(115200);
 
   analogWrite(SEG_PERIOD, 200);
 
+  Serial.println("Testing 7-segment display setup...");
+
+  Serial.println("You should see the digits 0-9 appear on your display.");
+
+  for (int i = 0; i < 10; i++) {
+    setDisplay(i);
+    delay(CYCLE_DELAY);
+  }
+
+  for (int i = 9; i >= 0; i--) {
+    setDisplay(i);
+    delay(CYCLE_DELAY);
+  }
+
+  for (int i = 0; i < 10; i++) {
+    setDisplay(i);
+    delay(CYCLE_DELAY);
+  }
+
+  delay(CYCLE_DELAY);
+
+  Serial.println("Experiment will begin in 3... 2... 1...");
+
+  setDisplay(CLEAR);
   int brightness = 200;
   int fadeAmount = 5;
-
-  Serial.println("Prepare. Experiment starting shortly!");
-  
-  Serial.println("Experiment will begin once dot segment turns completely off.");
-  
+  int counter = 0;
   for (int i = 0; i < 200; i++) {
-      analogWrite(SEG_PERIOD, brightness);
+    if (i % 10 == 0)
+      counter++;
 
-      brightness = brightness + fadeAmount;
-      
-      if (brightness <= 0 || brightness >= 255) {
-        fadeAmount = -fadeAmount;
-      }
-      delay(10);
+    setOnly(counter % 6);
+
+    analogWrite(SEG_PERIOD, brightness);
+    brightness = brightness + fadeAmount;
+    if (brightness <= 0 || brightness >= 255)
+      fadeAmount = -fadeAmount;
+
+    delay(10);
   }
 
-   for (int i = 0; i < 9; i++) {
-      setDisplay(i);
-      delay(200);
-  }
+  setDisplay(CLEAR);
 
   randomSeed(analogRead(A0));
   randDelay = random(3000, 6000);
   delay(randDelay);
 }
 
-// the loop routine runs over and over again forever:
+// -1 means cleared, 0-9 mean respective digits are being displayed
+int currentSegment = -1;
+
+int buttonStates[5] = {LOW, LOW, LOW, LOW, LOW};
+int buttonPressed = -1;
+
+bool displayingDigit = false;
+int currentDigit = -1;
+
+long newT;
+long oldT;
+long deltaT;
+
+
 void loop() {
-//  buttonState = !digitalRead(buttonPin);
-//  
-//  if (ledState == LOW && buttonState == LOW) {
-//    analogWrite(ledPin, ledBrightness);
-//    oldT = millis();
-//    ledState = HIGH;
-//  }
-//
-//  if (ledState == HIGH && buttonState == HIGH) {
-//    newT = millis();
-//    analogWrite(ledPin, 0);
-//
-//    deltaT = newT - oldT;
-//    Serial.println(deltaT);
-//    
-//    ledState = LOW;
-//    randDelay = random(1000,3000);
-//    delay(randDelay);
-//  }
+
+  // Poll buttons
+  buttonPressed = -1;
+  for (int i = 0; i < 5; i++) {
+    // NOTE - might have to change this line, depending on how your buttons are connected
+    buttonStates[i] = !readButton(i + 1);
+    Serial.println(buttonStates[i]);
+    if (buttonStates[i] == HIGH) {
+      if (buttonPressed == -1)
+        buttonPressed = i + 1;
+      else { // Two buttons are being pressed at the same time - invalidate
+        buttonPressed = -2;
+      }
+    }
+  }
+
+  //
+  if (displayingDigit == false && buttonPressed == -1) {
+    // Generate random number from 0-5
+    currentDigit = random(0, 6);
+    setDisplay(currentDigit);
+    oldT = millis();
+    displayingDigit = true;
+  } else if (displayingDigit == true && buttonPressed == currentDigit) {
+    newT = millis();
+    setDisplay(CLEAR);
+
+    deltaT = newT - oldT;
+    Serial.println(deltaT);
+
+    displayingDigit = false;
+    randDelay = random(1000, 3000);
+    delay(randDelay);
+  }
 }
