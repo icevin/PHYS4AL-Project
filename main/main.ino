@@ -266,7 +266,7 @@ void loop() {
   //
   if (displayingDigit == false && buttonPressed == -1) {
     // Generate random number from 1-5
-    currentDigit = random(1, 4);
+    currentDigit = random(1, 6);
     setDisplay(currentDigit);
     oldT = millis();
     displayingDigit = true;
