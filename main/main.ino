@@ -274,7 +274,7 @@ void loop() {
       digitalWrite(SEG_PERIOD, HIGH);
   } else if (displayingDigit == true && buttonPressed == currentDigit) {
     newT = millis();
-    setDisplay(CLEAR);x
+    setDisplay(CLEAR);
     if(trialCount > 100)
       digitalWrite(SEG_PERIOD, HIGH);
     
