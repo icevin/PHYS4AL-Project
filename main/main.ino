@@ -240,6 +240,8 @@ int buttonPressed = -1;
 bool displayingDigit = false;
 int currentDigit = -1;
 
+int trialCount = 0;
+
 long newT;
 long oldT;
 long deltaT;
@@ -264,19 +266,24 @@ void loop() {
   //
   if (displayingDigit == false && buttonPressed == -1) {
     // Generate random number from 1-5
-    currentDigit = random(1, 6);
+    currentDigit = random(1, 4);
     setDisplay(currentDigit);
     oldT = millis();
     displayingDigit = true;
+    if(trialCount > 100)
+      digitalWrite(SEG_PERIOD, HIGH);
   } else if (displayingDigit == true && buttonPressed == currentDigit) {
     newT = millis();
-    setDisplay(CLEAR);
-
+    setDisplay(CLEAR);x
+    if(trialCount > 100)
+      digitalWrite(SEG_PERIOD, HIGH);
+    
     deltaT = newT - oldT;
     Serial.print(deltaT);
     Serial.print(",");
     Serial.print(currentDigit);
     Serial.println();
+    trialCount++;
 
     displayingDigit = false;
     randDelay = random(1000, 3000);
