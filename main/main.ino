@@ -246,6 +246,9 @@ long newT;
 long oldT;
 long deltaT;
 
+// Each position in the array corresponds to what number will show for corresponding button
+// e.g. this is normal: {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+int buttonMapping[10] = {0, 4, 5, 2, 1, 3, 0, 0, 0, 0};
 
 void loop() {
 
@@ -267,7 +270,7 @@ void loop() {
   if (displayingDigit == false && buttonPressed == -1) {
     // Generate random number from 1-5
     currentDigit = random(1, 6);
-    setDisplay(currentDigit);
+    setDisplay(buttonMapping[currentDigit]);
     oldT = millis();
     displayingDigit = true;
     if(trialCount > 100)
